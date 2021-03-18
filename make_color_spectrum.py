@@ -6,23 +6,38 @@ import numpy as np
 import scipy.interpolate as interp
 import matplotlib.pyplot as plot
 
-def get_color_lookup(input_wvls):
+def get_color_lookup(input_wvls, use_spectrum_on_gray = False):
     #load the image
-    spect_img_path = "Linear_visible_spectrum.png"
-    spect_img = io.imread(spect_img_path)
+    if use_spectrum_on_gray:
+        spect_img_path = "Rendered_Spectrum.png"
+        spect_img = io.imread(spect_img_path)
 
-    #take a slice of the image, containing just the colors (no margins, etc)
-    spect_colors = spect_img[200,7:1909,0:3]/255
+        # take a slice of the image, containing just the colors (no margins, etc)
+        spect_colors = spect_img[45, 33:1589, 0:3] / 255
 
-    #create an array with values corresponding to the wavelength scale on the image
-    wvl_range = (750.0-380.0)
-    spect_wvls = np.array(list(range(spect_colors.shape[0])))/spect_colors.shape[0]*wvl_range+380
+        # create an array with values corresponding to the wavelength scale on the image
+        wvl_range = (740.0 - 360.0)
+        spect_wvls = np.array(list(range(spect_colors.shape[0]))) / spect_colors.shape[0] * wvl_range + 360
+        fillval = 0.58823529
+
+    else:
+        spect_img_path = "Linear_visible_spectrum.png"
+
+        spect_img = io.imread(spect_img_path)
+
+        #take a slice of the image, containing just the colors (no margins, etc)
+        spect_colors = spect_img[200,7:1909,0:3]/255
+
+        #create an array with values corresponding to the wavelength scale on the image
+        wvl_range = (750.0-380.0)
+        spect_wvls = np.array(list(range(spect_colors.shape[0])))/spect_colors.shape[0]*wvl_range+380
+        fillval = 0
 
     #for each color (R,G,B) interpolate the values from the spectrum image onto the input wavelengths
     #(for values outside the spectrum image range, use black)
-    f_red = interp.interp1d(spect_wvls, spect_colors[:, 0], bounds_error=False, fill_value=0)
-    f_green = interp.interp1d(spect_wvls, spect_colors[:, 1], bounds_error=False, fill_value=0)
-    f_blue = interp.interp1d(spect_wvls, spect_colors[:, 2], bounds_error=False, fill_value=0)
+    f_red = interp.interp1d(spect_wvls, spect_colors[:, 0], bounds_error=False, fill_value=fillval)
+    f_green = interp.interp1d(spect_wvls, spect_colors[:, 1], bounds_error=False, fill_value=fillval)
+    f_blue = interp.interp1d(spect_wvls, spect_colors[:, 2], bounds_error=False, fill_value=fillval)
 
     input_red = f_red(input_wvls)
     input_green = f_green(input_wvls)
@@ -37,7 +52,7 @@ def color_lineplot(ax, x,y,colors):
     # Could look weird for low spectral resolution.)
     for i in range(len(x)):
         try:
-            ax.plot(x[i:i+2],y[i:i+2], color = colors[i], linewidth = 1, solid_capstyle= 'round')
+            ax.plot(x[i:i+2],y[i:i+2], color = colors[i], linewidth = 2, solid_capstyle= 'round')
         except:
             pass
 
@@ -48,7 +63,7 @@ wvls = np.arange(200,900,0.1)
 fake_spect = np.sin(wvls/np.pi)
 
 #look up rgb colors matching each wvl
-color_values = get_color_lookup(wvls)
+color_values = get_color_lookup(wvls, use_spectrum_on_gray=False)
 
 #get indices for three spectral ranges
 range1_ind = np.all((wvls > 240, wvls < 340), axis=0)
